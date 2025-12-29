@@ -17,79 +17,121 @@
 
   #editor {
     width: 100%;
-    min-height: 200vh; /* たくさん改行でスペース確保 */
-    padding: 20px;
+    min-height: 200vh;
+    padding: 0;
+    margin: 0;
     box-sizing: border-box;
+    user-select: none;
+    outline: none;
   }
 
   .video-container {
-    position: relative;
-    margin: 50px 0;
+    margin: 0;
+    padding: 0;
     text-align: center;
+    user-select: none;
   }
 
   .video-container iframe {
     width: 100%;
-    max-width: 100%;
     height: 300px;
     display: block;
-    margin: 0 auto;
+    margin: 0;
+    padding: 0;
+    border: none;
+    pointer-events: none; /* 選択不可 */
   }
 
   .center-button {
-    margin-top: 10px;
-    padding: 8px 16px;
+    margin-top: 50px; /* ボタン少し下 */
+    padding: 12px 24px;
     background: #ff0000;
     color: white;
     border: none;
     cursor: pointer;
+    font-size: 16px;
+    user-select: none;
   }
 
-  /* 横向きで全画面風に */
+  .center-button * {
+    pointer-events: none; /* ボタン文字選択不可 */
+  }
+
   @media (orientation: landscape) {
     .video-container iframe {
       height: 100vh;
     }
   }
-
 </style>
 </head>
 <body>
 
-<div id="editor" contenteditable="true" placeholder="">
-  <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+<div id="editor" contenteditable="true">
+  <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
 </div>
 
 <script>
-  const editor = document.getElementById('editor');
+const editor = document.getElementById('editor');
 
-  editor.addEventListener('paste', (e) => {
-    e.preventDefault();
-    const text = (e.clipboardData || window.clipboardData).getData('text');
-    
-    // YouTubeリンクを検出
-    const youtubeMatch = text.match(/(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/) ||
-                         text.match(/(?:https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]+)/);
+editor.addEventListener('paste', (e) => {
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text');
 
-    if (youtubeMatch) {
-      const videoId = youtubeMatch[1];
-      const container = document.createElement('div');
-      container.className = 'video-container';
-      container.innerHTML = `
-        <iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>
-        <button class="center-button">中央にスクロール</button>
-      `;
-      editor.appendChild(container);
+  const youtubeMatch = text.match(/(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/) ||
+                       text.match(/(?:https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]+)/);
 
-      const button = container.querySelector('.center-button');
-      button.addEventListener('click', () => {
-        container.scrollIntoView({behavior: 'smooth', block: 'center'});
-      });
-    } else {
-      // 普通のテキストはそのまま貼る
-      document.execCommand('insertText', false, text);
-    }
+  if (!youtubeMatch) return;
+  const videoId = youtubeMatch[1];
+
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return;
+  const range = selection.getRangeAt(0);
+
+  const fragment = document.createDocumentFragment();
+
+  // ① 貼り付け位置に10行改行
+  for (let i = 0; i < 20; i++) {
+    fragment.appendChild(document.createElement('br'));
+  }
+
+  // ② iframe設置
+  const container = document.createElement('div');
+  container.className = 'video-container';
+  const iframe = document.createElement('iframe');
+  iframe.src = `https://www.youtube.com/embed/${videoId}`;
+  iframe.frameBorder = '0';
+  iframe.allowFullscreen = true;
+  container.appendChild(iframe);
+
+  // ③ 少し下にボタン設置
+  const button = document.createElement('button');
+  button.className = 'center-button';
+  button.textContent = '中央にスクロール';
+  button.contentEditable = 'false';
+  button.addEventListener('click', () => {
+    container.scrollIntoView({behavior: 'smooth', block: 'center'});
   });
+  container.appendChild(button);
+
+  fragment.appendChild(container);
+
+  // ④ iframeの下にさらに10行改行
+  for (let i = 0; i < 20; i++) {
+    fragment.appendChild(document.createElement('br'));
+  }
+
+  // 挿入
+  range.insertNode(fragment);
+
+  // ⑤ カーソルをiframeの後ろに移動
+  range.setStartAfter(container.nextSibling); // 次の改行の後
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+
+  // ⑥ iframeが中央に来る位置にスクロール
+  container.scrollIntoView({behavior: 'smooth', block: 'center'});
+});
 </script>
 
 </body>
