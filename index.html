@@ -3,68 +3,73 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>全画面動画エディタ</title>
+<title>独立ボタン付き動画エディタ</title>
 <style>
   html, body {
     margin: 0;
     padding: 0;
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
     background: black;
+    color: white;
+    font-family: sans-serif;
   }
 
   #editor {
     width: 100%;
-    height: 100%;
-    position: relative;
+    min-height: 200vh;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
     user-select: none;
     outline: none;
   }
 
-  .video-wrapper {
-    position: absolute;
-    top: 0;
-    left: 0;
+  .video-container {
     width: 100%;
-    height: 100%;
+    max-width: 100%;
+    margin: 40px 0; /* 上下スペースでボタンと独立 */
+    text-align: center;
+  }
+
+  .video-wrapper {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* 16:9 比率維持 */
   }
 
   .video-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     border: none;
   }
 
   .center-button {
-    position: absolute;
-    left: 0;
+    display: block;
     width: 100%;
+    max-width: 400px;
+    margin: 20px auto; /* 動画から離して配置 */
     padding: 10px 0;
-    background: rgba(0,0,0,0); /* 完全透明 */
+    background: #444;
     color: white;
-    font-size: 18px;
-    text-align: center;
+    font-size: 16px;
+    border: none;
     cursor: pointer;
+    text-align: center;
     user-select: none;
   }
 
-  .center-button.top {
-    top: 10px;
-  }
-
-  .center-button.bottom {
-    bottom: 10px;
-  }
-
   .center-button:hover {
-    background: rgba(255,255,255,0.1); /* ホバーで少し表示 */
+    background: #666;
   }
 </style>
 </head>
 <body>
 
-<div id="editor" contenteditable="true"></div>
+<div id="editor" contenteditable="true">
+  <br><br><br><br>
+</div>
 
 <script>
 const editor = document.getElementById('editor');
@@ -85,36 +90,40 @@ editor.addEventListener('paste', (e) => {
 
   const fragment = document.createDocumentFragment();
 
-  // 動画ラッパー作成
+  // ① 動画コンテナ
+  const container = document.createElement('div');
+  container.className = 'video-container';
+
   const wrapper = document.createElement('div');
   wrapper.className = 'video-wrapper';
 
   const iframe = document.createElement('iframe');
-  iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=0&controls=1`;
+  iframe.src = `https://www.youtube.com/embed/${videoId}`;
   iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
   iframe.allowFullscreen = true;
 
   wrapper.appendChild(iframe);
+  container.appendChild(wrapper);
+  fragment.appendChild(container);
 
-  // 上ボタン
+  // ② 上のボタン（動画から離して配置）
   const topButton = document.createElement('button');
-  topButton.className = 'center-button top';
-  topButton.textContent = '中央にスクロール（上）';
+  topButton.className = 'center-button';
+  topButton.textContent = '上ボタン';
   topButton.setAttribute('contenteditable', 'false');
   topButton.addEventListener('mousedown', e => e.preventDefault());
-  topButton.addEventListener('click', () => wrapper.scrollIntoView({behavior:'smooth', block:'center'}));
-  wrapper.appendChild(topButton);
+  topButton.addEventListener('click', () => alert('上ボタン押した'));
+  fragment.appendChild(topButton);
 
-  // 下ボタン
+  // ③ 下のボタン（動画から離して配置）
   const bottomButton = document.createElement('button');
-  bottomButton.className = 'center-button bottom';
-  bottomButton.textContent = '中央にスクロール（下）';
+  bottomButton.className = 'center-button';
+  bottomButton.textContent = '下ボタン';
   bottomButton.setAttribute('contenteditable', 'false');
   bottomButton.addEventListener('mousedown', e => e.preventDefault());
-  bottomButton.addEventListener('click', () => wrapper.scrollIntoView({behavior:'smooth', block:'center'}));
-  wrapper.appendChild(bottomButton);
+  bottomButton.addEventListener('click', () => alert('下ボタン押した'));
+  fragment.appendChild(bottomButton);
 
-  fragment.appendChild(wrapper);
   range.insertNode(fragment);
 });
 </script>
