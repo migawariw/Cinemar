@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>没入型動画エディタ</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    color: white;
+    font-family: sans-serif;
+    height: 100%;
+    overflow-x: hidden;
+  }
+
+  #editor {
+    width: 100%;
+    min-height: 200vh;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    user-select: none;
+    outline: none;
+  }
+
+  .video-container {
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    user-select: none;
+  }
+
+  /* アスペクト比を維持するレスポンシブラッパー */
+  .video-wrapper {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* 16:9 */
+    margin: 0;
+  }
+
+  .video-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  .center-button {
+    display: block;
+    width: 100%;
+    padding: 10px 0;
+    background: #444; /* 見やすく調整 */
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    user-select: none;
+    text-align: center;
+    margin: 5px 0;
+  }
+
+  .center-button * {
+    pointer-events: none; /* ボタン文字選択不可 */
+  }
+</style>
+</head>
+<body>
+
+<div id="editor" contenteditable="true">
+  <br><br><br><br><br><br><br><br><br><br><br><br><br>
+</div>
+
+<script>
+const editor = document.getElementById('editor');
+
+editor.addEventListener('paste', (e) => {
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+
+  // YouTube URL 正規表現
+  const youtubeMatch = text.match(
+    /(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/
+  );
+
+  if (!youtubeMatch) return;
+  const videoId = youtubeMatch[1];
+
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return;
+  const range = selection.getRangeAt(0);
+
+  const fragment = document.createDocumentFragment();
+
+  // ① 貼り付け位置に10行改行
+  for (let i = 0; i < 10; i++) {
+    fragment.appendChild(document.createElement('br'));
+  }
+
+  // ② iframe設置
+  const container = document.createElement('div');
+  container.className = 'video-container';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'video-wrapper';
+
+  const iframe = document.createElement('iframe');
+  iframe.src = `https://www.youtube.com/embed/${videoId}`;
+  iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+  iframe.allowFullscreen = true;
+
+  wrapper.appendChild(iframe);
+  container.appendChild(wrapper);
+
+  // 上側ボタン
+  const topButton = document.createElement('button');
+  topButton.className = 'center-button';
+  topButton.textContent = '中央にスクロール（上）';
+  topButton.setAttribute('contenteditable', 'false'); // 編集不可
+  topButton.addEventListener('mousedown', (e) => e.preventDefault()); // カーソル防止
+  topButton.addEventListener('click', () => {
+    container.scrollIntoView({behavior: 'smooth', block: 'center'});
+  });
+  container.insertBefore(topButton, wrapper);
+
+  // 下側ボタン
+  const bottomButton = document.createElement('button');
+  bottomButton.className = 'center-button';
+  bottomButton.textContent = '中央にスクロール（下）';
+  bottomButton.setAttribute('contenteditable', 'false'); // 編集不可
+  bottomButton.addEventListener('mousedown', (e) => e.preventDefault()); // カーソル防止
+  bottomButton.addEventListener('click', () => {
+    container.scrollIntoView({behavior: 'smooth', block: 'center'});
+  });
+  container.appendChild(bottomButton);
+
+  fragment.appendChild(container);
+
+  // ③ iframeの下にさらに10行改行
+  for (let i = 0; i < 10; i++) {
+    fragment.appendChild(document.createElement('br'));
+  }
+
+  // 挿入
+  range.insertNode(fragment);
+
+  // カーソルをiframe下の改行の後に移動
+  let lastBr = container.nextSibling;
+  for (let i = 0; i < 9; i++) {
+    if (lastBr) lastBr = lastBr.nextSibling;
+  }
+  if (lastBr) {
+    range.setStartAfter(lastBr);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  // iframeが中央に来る位置にスクロール
+  container.scrollIntoView({behavior: 'smooth', block: 'center'});
+});
+</script>
+
+</body>
+</html>
