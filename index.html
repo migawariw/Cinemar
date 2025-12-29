@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cinemar</title>
+<title>没入型動画エディタ</title>
 <style>
   html, body {
     margin: 0;
@@ -32,42 +32,46 @@
     user-select: none;
   }
 
-  .video-container iframe {
+  /* アスペクト比を維持するレスポンシブラッパー */
+  .video-wrapper {
+    position: relative;
     width: 100%;
-    height: 300px;
-    display: block;
+    padding-bottom: 56.25%; /* 16:9 */
     margin: 0;
-    padding: 0;
+  }
+
+  .video-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     border: none;
-    pointer-events: none; /* 選択不可 */
   }
 
   .center-button {
-    margin-top: 50px; /* ボタン少し下 */
-    padding: 12px 24px;
-    background: #ff0000;
-    color: white;
+    display: block;
+    width: 100%;
+    padding: 10px 0;
+    background: black; /* 見やすく調整 */
+    color: black;
     border: none;
     cursor: pointer;
     font-size: 16px;
     user-select: none;
+    text-align: center;
+    margin: 5px 0;
   }
 
   .center-button * {
     pointer-events: none; /* ボタン文字選択不可 */
-  }
-
-  @media (orientation: landscape) {
-    .video-container iframe {
-      height: 100vh;
-    }
   }
 </style>
 </head>
 <body>
 
 <div id="editor" contenteditable="true">
-  <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+  <br><br><br><br><br><br><br><br><br><br><br><br><br>
 </div>
 
 <script>
@@ -77,8 +81,10 @@ editor.addEventListener('paste', (e) => {
   e.preventDefault();
   const text = (e.clipboardData || window.clipboardData).getData('text');
 
-  const youtubeMatch = text.match(/(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/) ||
-                       text.match(/(?:https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]+)/);
+  // YouTube URL 正規表現
+  const youtubeMatch = text.match(
+    /(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/
+  );
 
   if (!youtubeMatch) return;
   const videoId = youtubeMatch[1];
@@ -90,46 +96,68 @@ editor.addEventListener('paste', (e) => {
   const fragment = document.createDocumentFragment();
 
   // ① 貼り付け位置に10行改行
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 10; i++) {
     fragment.appendChild(document.createElement('br'));
   }
 
   // ② iframe設置
   const container = document.createElement('div');
   container.className = 'video-container';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'video-wrapper';
+
   const iframe = document.createElement('iframe');
   iframe.src = `https://www.youtube.com/embed/${videoId}`;
-  iframe.frameBorder = '0';
+  iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
   iframe.allowFullscreen = true;
-  container.appendChild(iframe);
 
-  // ③ 少し下にボタン設置
-  const button = document.createElement('button');
-  button.className = 'center-button';
-  button.textContent = '中央にスクロール';
-  button.contentEditable = 'false';
-  button.addEventListener('click', () => {
+  wrapper.appendChild(iframe);
+  container.appendChild(wrapper);
+
+  // 上側ボタン
+  const topButton = document.createElement('button');
+  topButton.className = 'center-button';
+  topButton.textContent = '中央にスクロール（上）';
+  topButton.contentEditable = 'false';
+  topButton.addEventListener('click', () => {
     container.scrollIntoView({behavior: 'smooth', block: 'center'});
   });
-  container.appendChild(button);
+  container.insertBefore(topButton, wrapper);
+
+  // 下側ボタン
+  const bottomButton = document.createElement('button');
+  bottomButton.className = 'center-button';
+  bottomButton.textContent = '中央にスクロール（下）';
+  bottomButton.contentEditable = 'false';
+  bottomButton.addEventListener('click', () => {
+    container.scrollIntoView({behavior: 'smooth', block: 'center'});
+  });
+  container.appendChild(bottomButton);
 
   fragment.appendChild(container);
 
-  // ④ iframeの下にさらに10行改行
-  for (let i = 0; i < 20; i++) {
+  // ③ iframeの下にさらに10行改行
+  for (let i = 0; i < 10; i++) {
     fragment.appendChild(document.createElement('br'));
   }
 
   // 挿入
   range.insertNode(fragment);
 
-  // ⑤ カーソルをiframeの後ろに移動
-  range.setStartAfter(container.nextSibling); // 次の改行の後
-  range.collapse(true);
-  selection.removeAllRanges();
-  selection.addRange(range);
+  // カーソルをiframe下の改行の後に移動
+  let lastBr = container.nextSibling;
+  for (let i = 0; i < 9; i++) {
+    if (lastBr) lastBr = lastBr.nextSibling;
+  }
+  if (lastBr) {
+    range.setStartAfter(lastBr);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
 
-  // ⑥ iframeが中央に来る位置にスクロール
+  // iframeが中央に来る位置にスクロール
   container.scrollIntoView({behavior: 'smooth', block: 'center'});
 });
 </script>
