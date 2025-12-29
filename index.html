@@ -49,18 +49,23 @@
     border: none;
   }
 
+  /* 上下ボタン */
   .center-button {
     display: block;
     width: 100%;
-    padding: 10px 0;
-    background: #444; /* 見やすく調整 */
+    padding: 5px 0;               /* 高さを小さく */
+    background: transparent;       /* 背景を透明に */
     color: white;
     border: none;
     cursor: pointer;
     font-size: 16px;
     user-select: none;
     text-align: center;
-    margin: 5px 0;
+    margin: 2px 0;                /* 上下の余白を小さく */
+  }
+
+  .center-button:hover {
+    background: rgba(255,255,255,0.1); /* ホバー時に少し背景 */
   }
 
   .center-button * {
@@ -95,12 +100,12 @@ editor.addEventListener('paste', (e) => {
 
   const fragment = document.createDocumentFragment();
 
-  // ① 貼り付け位置に10行改行
+  // 貼り付け位置に10行改行
   for (let i = 0; i < 10; i++) {
     fragment.appendChild(document.createElement('br'));
   }
 
-  // ② iframe設置
+  // iframe設置
   const container = document.createElement('div');
   container.className = 'video-container';
 
@@ -119,8 +124,8 @@ editor.addEventListener('paste', (e) => {
   const topButton = document.createElement('button');
   topButton.className = 'center-button';
   topButton.textContent = '中央にスクロール（上）';
-  topButton.setAttribute('contenteditable', 'false'); // 編集不可
-  topButton.addEventListener('mousedown', (e) => e.preventDefault()); // カーソル防止
+  topButton.setAttribute('contenteditable', 'false'); 
+  topButton.addEventListener('mousedown', (e) => e.preventDefault());
   topButton.addEventListener('click', () => {
     container.scrollIntoView({behavior: 'smooth', block: 'center'});
   });
@@ -130,8 +135,8 @@ editor.addEventListener('paste', (e) => {
   const bottomButton = document.createElement('button');
   bottomButton.className = 'center-button';
   bottomButton.textContent = '中央にスクロール（下）';
-  bottomButton.setAttribute('contenteditable', 'false'); // 編集不可
-  bottomButton.addEventListener('mousedown', (e) => e.preventDefault()); // カーソル防止
+  bottomButton.setAttribute('contenteditable', 'false'); 
+  bottomButton.addEventListener('mousedown', (e) => e.preventDefault());
   bottomButton.addEventListener('click', () => {
     container.scrollIntoView({behavior: 'smooth', block: 'center'});
   });
@@ -139,7 +144,7 @@ editor.addEventListener('paste', (e) => {
 
   fragment.appendChild(container);
 
-  // ③ iframeの下にさらに10行改行
+  // iframe下にさらに10行改行
   for (let i = 0; i < 10; i++) {
     fragment.appendChild(document.createElement('br'));
   }
